@@ -73,8 +73,8 @@ def check_answer(given_answerL: list, right_answerL: list):
             else:
                 print(next(right_answerI) + "    --INCORRECT") #FIXME: print properly matching right_answer based on given_answerd
 
-def get_multiple_input(n: int):
-    return [input() for _ in range(n)]
+def get_input(n: int):
+    return [input().strip() for _ in range(n)]
 
 
 
@@ -222,14 +222,14 @@ def init(text="", flag=0):
                 start_i = family_attributeD["start_i"]
                 for genus in genusL[start_i:]:
                     subgenusL = [subgenus.strip() for subgenus in genus.split("\n") if subgenus.strip()]
-                    check_answer(get_multiple_input(len(subgenusL)), subgenusL)
+                    check_answer(get_input(len(subgenusL)), subgenusL)
 
                     print()
 
             elif family_typeL[0] == "List":
                 for genus in genusL:
                     subgenusL = [subgenus.strip() for subgenus in genus.split("\n") if subgenus.strip()]
-                    check_answer(get_multiple_input(len(subgenusL)), subgenusL)
+                    check_answer(get_input(len(subgenusL)), subgenusL)
 
                     print()
 
@@ -244,7 +244,7 @@ def init(text="", flag=0):
                     print(chosen_genus[0])
 
                     # check answer
-                    check_answer(get_multiple_input(len(chosen_genus)-1), chosen_genus[1:])
+                    check_answer(get_input(len(chosen_genus)-1), chosen_genus[1:])
                     print()
 
             elif re.compile(r"(Q&)+Q").match(family_typeL[0]):
@@ -262,7 +262,7 @@ def init(text="", flag=0):
                     print(chosen_genus[0])
 
                     # check answer
-                    check_answer(get_multiple_input(n), chosen_genus[1:])
+                    check_answer(get_input(n), chosen_genus[1:])
                     print()
 
             elif family_typeL[0] == "Categorize":
@@ -277,7 +277,7 @@ def init(text="", flag=0):
                 for chosen_genus in genusL:
                     print(chosen_genus)
 
-                    check_answer(input(), category_manager.get_category(chosen_genus))
+                    check_answer(get_input(1), category_manager.get_category(chosen_genus))
                     print()
 
             else:
