@@ -195,7 +195,7 @@ def init(text="", flag=0):
 
         genusL = [line.strip() for line in family_maintext.split(family_attributeD["genus_separator"]) if line.strip()]
 
-        if family_attributeD["first_given"] == "genusL[0]":
+        if family_attributeD["first_given"] == "genus[0]":
             family_attributeD["first_given"] = genusL[0]
             family_attributeD["start_i"] = 1
 
