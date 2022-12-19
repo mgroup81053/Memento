@@ -74,7 +74,13 @@ def check_answer(given_answerL: list, right_answerL: list):
                 print(next(right_answerI) + "    --INCORRECT") #FIXME: print properly matching right_answer based on given_answerd
 
 def get_input(n: int):
-    return [input().strip() for _ in range(n)]
+    _out: list[str] = []
+    while len(_out) != n:
+        _temp = input().strip()
+        if not _temp.strip():
+            _out.append(_temp)
+
+    return _out
 
 
 
