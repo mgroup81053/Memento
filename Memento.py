@@ -77,7 +77,7 @@ def get_input(n: int):
     _out: list[str] = []
     while len(_out) != n:
         _temp = input().strip()
-        if not _temp.strip():
+        if _temp:
             _out.append(_temp)
 
     return _out
