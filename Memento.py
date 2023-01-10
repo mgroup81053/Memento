@@ -53,15 +53,22 @@ class Category_manager:
     def get_all_elements(self):
         return list(self.categoryD.keys())
 
+
+
+answer_stack: list[bool] = []
+
 @multimethod
-def check_answer(given_answer: str, right_answer: str):
+def check_answer(given_answer: str, right_answer: str): #type: ignore
     if given_answer != right_answer:
         print(right_answer + "    --INCORRECT")
+        answer_stack.append(False)
+    else:
+        answer_stack.append(True)
 
 @multimethod
 def check_answer(given_answerL: list, right_answerL: list):
     if all([given_answer in right_answerL for given_answer in given_answerL]):
-        pass # pass if perfect
+        answer_stack.append(True)
     else:
         given_answerI = (given_answer for given_answer in given_answerL)
         right_answerI = (right_answer for right_answer in right_answerL
@@ -72,6 +79,8 @@ def check_answer(given_answerL: list, right_answerL: list):
                 print(given_answer + "    --CORRECT")
             else:
                 print(next(right_answerI) + "    --INCORRECT") #FIXME: print properly matching right_answer based on given_answerd
+
+        answer_stack.append(False)
 
 def get_input(n: int):
     _out: list[str] = []
@@ -98,6 +107,8 @@ def get_txt(domain_name="", phylum_name=""):
 
 
 def init(text="", flag=0):
+    global answer_stack
+    
     if not text:
         text = get_txt()
 
@@ -146,6 +157,8 @@ def init(text="", flag=0):
     for family in familyL:
         if not (flag & INNER_FAMILY):
             os.system("cls")
+
+        answer_stack = []
 
         _raw_family_types = family.split("\n")[0]
         family_typeL = _raw_family_types[1:-1].split(", ")
@@ -316,7 +329,12 @@ def init(text="", flag=0):
 
 
         if not (flag & INNER_FAMILY):
-            input("\n\nEnd of the family.")
+            print("\n")
+
+            if all(answer_stack):
+                print("Perfect!")
+
+            input("End of the family.")
         else:
             print()
 
