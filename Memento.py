@@ -165,7 +165,7 @@ def init(text="", flag=0):
         family_typeL.sort(key=lambda _type: _type not in special_family_typeT)
         family_attributeD = {
             "genus_separator": "\n",
-            "first_given": "genus[0]",
+            "first_given": "",
             "start_i": 0,
             "ignorance_of_parentheses": False,
         }
