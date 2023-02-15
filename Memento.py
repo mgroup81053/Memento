@@ -8,6 +8,7 @@ from multimethod import multimethod
 INNER_FAMILY = 0b1
 SECOND_INNER_FAMILY = 0b11
 MANUAL_GENUS_SEPARATOR = 0b100
+MEMORIZING_SEQUENCE = 0b1000
 
 special_family_typeT = ("Selection", "_SELECTION")
 
@@ -59,8 +60,10 @@ def check_answer(given_answer: str, right_answer: str): #type: ignore
     if given_answer != right_answer:
         print(right_answer + "    --INCORRECT")
         answer_stack.append(False)
+        return False
     else:
         answer_stack.append(True)
+        return True
 
 @multimethod
 def check_answer(given_answerL: list, right_answer: str): #type: ignore
@@ -70,13 +73,16 @@ def check_answer(given_answerL: list, right_answer: str): #type: ignore
     if given_answerL[0] != right_answer:
         print(right_answer + "    --INCORRECT")
         answer_stack.append(False)
+        return False
     else:
         answer_stack.append(True)
+        return True
 
 @multimethod
 def check_answer(given_answerL: list, right_answerL: tuple): #type: ignore
     if all(given_answer in right_answerL for given_answer in given_answerL):
         answer_stack.append(True)
+        return True
     else:
         given_answerI = (given_answer for given_answer in given_answerL)
         right_answerI = (right_answer for right_answer in right_answerL
@@ -89,11 +95,13 @@ def check_answer(given_answerL: list, right_answerL: tuple): #type: ignore
                 print(next(right_answerI) + "    --INCORRECT") #FIXME: print properly matching right_answer based on given_answerd
 
         answer_stack.append(False)
+        return False
 
 @multimethod
 def check_answer(given_answerL: list, right_answerL: list):
     if all(given_answer in right_answerL for given_answer in given_answerL):
         answer_stack.append(True)
+        return True
     else:
         given_answerI = (given_answer for given_answer in given_answerL)
         right_answerI = (right_answer for right_answer in right_answerL
@@ -106,6 +114,7 @@ def check_answer(given_answerL: list, right_answerL: list):
                 print(next(right_answerI) + "    --INCORRECT") #FIXME: print properly matching right_answer based on given_answerd
 
         answer_stack.append(False)
+        return False
 
 def get_input(n: int):
     _out: list[str] = []
@@ -262,9 +271,27 @@ def init(text="", flag=0):
                 start_i = family_attributeD["start_i"]
                 for genus in genusL[start_i:]:
                     subgenusL = [subgenus.strip() for subgenus in genus.split("\n") if subgenus.strip()]
-                    check_answer(get_input(len(subgenusL)), subgenusL)
+                    if flag & MEMORIZING_SEQUENCE:
+                        # First step: memorizing while watching
+                        answer_streak = 0
+                        while answer_streak < 3:
+                            print(genus)
+                            answer_streak = answer_streak + 1 if check_answer(get_input(len(subgenusL)), subgenusL) else 0
 
-                    print()
+                            print()
+
+                        # Second step: memorizing without watching
+                        answer_streak = 0
+                        while answer_streak < 3:
+                            os.system("cls")
+                            answer_streak = answer_streak + 1 if check_answer(get_input(len(subgenusL)), subgenusL) else 0
+
+                            input("\nPRESS ANY KEY")
+                            os.system("cls")
+                    else:
+                        check_answer(get_input(len(subgenusL)), subgenusL)
+
+                        print()
 
             elif family_typeL[0] == "List":
                 for genus in genusL:
