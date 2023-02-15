@@ -1,16 +1,13 @@
 import re
-from random import shuffle
+from random import shuffle, getrandbits
 import os
 from multimethod import multimethod
-from typing import Iterable
 
 
 
 INNER_FAMILY = 0b1
 SECOND_INNER_FAMILY = 0b11
-
-GIVE_FIRST_GENUS = 0b1 << 16 #FIXME: replace (x << 16)
-IGNORE_PARENTHESES = 0b10 << 16 #FIXME: replace (x << 16)
+MANUAL_GENUS_SEPARATOR = 0b100
 
 special_family_typeT = ("Selection", "_SELECTION")
 
@@ -41,7 +38,7 @@ class UnknownFamilyType(Exception):
 
 class Category_manager:
     def __init__(self) -> None:
-        self.categoryD = {}
+        self.categoryD: dict[str, str] = {}
 
     def add_category(self, category_name, elements):
         for element in elements:
@@ -66,8 +63,36 @@ def check_answer(given_answer: str, right_answer: str): #type: ignore
         answer_stack.append(True)
 
 @multimethod
+def check_answer(given_answerL: list, right_answer: str): #type: ignore
+    if len(given_answerL) != 1:
+        raise Exception("Answer size should be 1")
+
+    if given_answerL[0] != right_answer:
+        print(right_answer + "    --INCORRECT")
+        answer_stack.append(False)
+    else:
+        answer_stack.append(True)
+
+@multimethod
+def check_answer(given_answerL: list, right_answerL: tuple): #type: ignore
+    if all(given_answer in right_answerL for given_answer in given_answerL):
+        answer_stack.append(True)
+    else:
+        given_answerI = (given_answer for given_answer in given_answerL)
+        right_answerI = (right_answer for right_answer in right_answerL
+            if right_answer not in given_answerL)
+
+        for given_answer in given_answerI:
+            if given_answer in right_answerL:
+                print(given_answer + "    --CORRECT")
+            else:
+                print(next(right_answerI) + "    --INCORRECT") #FIXME: print properly matching right_answer based on given_answerd
+
+        answer_stack.append(False)
+
+@multimethod
 def check_answer(given_answerL: list, right_answerL: list):
-    if all([given_answer in right_answerL for given_answer in given_answerL]):
+    if all(given_answer in right_answerL for given_answer in given_answerL):
         answer_stack.append(True)
     else:
         given_answerI = (given_answer for given_answer in given_answerL)
@@ -113,17 +138,6 @@ def init(text="", flag=0):
         text = get_txt()
 
 
-    # remove comments
-
-    # remove /**/
-
-    # text = re.sub(pattern=r"""
-    #     /\* # /*
-    #     [^/*]* # (something one or multiple line)
-    #     \*/ # */
-    #     """,
-
-    #     repl="", string=text, flags=re.DOTALL | re.VERBOSE)
 
     text = re.sub(r"/\*[^*]*\*+(?:[^/*][^*]*\*+)*/", "", text) # https://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment
 
@@ -168,9 +182,11 @@ def init(text="", flag=0):
             "first_given": "",
             "start_i": 0,
             "ignorance_of_parentheses": False,
+            "suggestion": "",
         }
 
 
+        is_manual_genus_separator: bool = False
         if _temp := re.compile(r"\[.*\]").match(family.split("\n")[1]):
             _raw_family_attribute = family.split("\n")[1][1:-1]
             _key_value_pairL = _raw_family_attribute.split(", ")
@@ -190,6 +206,10 @@ def init(text="", flag=0):
             family_name = family.split("\n")[2]
             family_maintext = "\n".join(family.split("\n")[3:])
 
+
+            if "genus_separator" in _appending_family_attributeD.keys():
+                is_manual_genus_separator = True
+
         else:
             family_name = family.split("\n")[1]
             family_maintext = "\n".join(family.split("\n")[2:])
@@ -206,28 +226,29 @@ def init(text="", flag=0):
 
 
 
-        for family_type in family_typeL:
-            if genus_separator:=min_genus_separatorD.get(family_type):
-                family_attributeD["genus_separator"] = max(genus_separator, min_genus_separatorD[family_type], key=
-                    lambda value: (len(value.strip()), value))
+        if not is_manual_genus_separator:
+            for family_type in family_typeL:
+                if (genus_separator:=min_genus_separatorD.get(family_type)) and family_attributeD["genus_separator"] == "\n":
+                    family_attributeD["genus_separator"] = genus_separator
 
 
         genusL = [line.strip() for line in family_maintext.split(family_attributeD["genus_separator"]) if line.strip()]
 
-        if family_attributeD["first_given"] == "genus[0]":
-            family_attributeD["first_given"] = genusL[0]
-            family_attributeD["start_i"] = 1
+        if re.match(r"^genus\[\d+\]$", family_attributeD["first_given"]): # genus[i]
+            i = family_attributeD["first_given"][6:-1]
+            family_attributeD["first_given"] = genusL[i]
+            family_attributeD["start_i"] = i+1
 
         if family_attributeD["ignorance_of_parentheses"]:
-            genusL = [re.compile(r"\[ [^\[\]]* \] | \( [^()]* \)", re.VERBOSE | re.DOTALL).sub("", genus) for genus in genusL]
-        
+            genusL = [re.sub(r"\[ [^\[\]]* \] | \( [^()]* \)", "", genus, re.VERBOSE | re.DOTALL) for genus in genusL]
+
 
 
 
 
 
         if flag & SECOND_INNER_FAMILY != SECOND_INNER_FAMILY:
-            print(family_name, end="\n\n")
+            print(family_name, end="\n\n\n")
 
 
 
@@ -237,7 +258,7 @@ def init(text="", flag=0):
         # family action type
         if len(family_typeL) == 1:
             if family_typeL[0] == "Sequence":
-                print(family_attributeD["first_given"])
+                print(family_attributeD["first_given"], end="")
                 start_i = family_attributeD["start_i"]
                 for genus in genusL[start_i:]:
                     subgenusL = [subgenus.strip() for subgenus in genus.split("\n") if subgenus.strip()]
@@ -259,14 +280,33 @@ def init(text="", flag=0):
 
                 # randomly select `chosen_genus` from `genusL`
                 shuffle(genusL)
+                print(family_attributeD["suggestion"], end="")
                 for chosen_genus in genusL:
+                    # random question
                     print(chosen_genus[0])
 
                     # check answer
                     check_answer(get_input(len(chosen_genus)-1), chosen_genus[1:])
                     print()
 
-            elif re.compile(r"(Q&)+Q").match(family_typeL[0]):
+            elif family_typeL[0] == "Q&Q":
+                genusL = [[[genus.strip().split("\n")[0].strip(),], [line.strip() for line in genus.strip().split("\n")[1:]]]
+                    for genus in genusL]
+
+
+                # randomly select `chosen_genus` from `genusL`
+                shuffle(genusL)
+                print(family_attributeD["suggestion"], end="")
+                for chosen_genus in genusL:
+                    # random question
+                    shuffle(chosen_genus)
+                    print("\n".join(chosen_genus[0]))
+
+                    # check answer
+                    check_answer(get_input(len(chosen_genus[1])), chosen_genus[1])
+                    print()
+
+            elif re.compile(r"(Q&)+Q").match(family_typeL[0]): # Q&Q&Q, Q&Q&Q&Q, ...
                 n = family_typeL[0].count("Q") - 1
 
                 genusL = [[line.strip() for line in genus.strip().split("\n")]
@@ -275,6 +315,7 @@ def init(text="", flag=0):
 
                 # randomly select `chosen_genus` from `genusL`
                 shuffle(genusL)
+                print(family_attributeD["suggestion"], end="")
                 for chosen_genus in genusL:
                     # random question
                     shuffle(chosen_genus)
@@ -284,7 +325,7 @@ def init(text="", flag=0):
                     check_answer(get_input(n), chosen_genus[1:])
                     print()
 
-            elif family_typeL[0] == "Categorize":
+            elif family_typeL[0] == "Category":
                 category_manager = Category_manager()
                 for category in family_maintext.split("\n\n"):
                     category_name, *raw_elementL = category.strip().split("\n")
@@ -298,6 +339,9 @@ def init(text="", flag=0):
 
                     check_answer(get_input(1), category_manager.get_category(chosen_genus))
                     print()
+
+            elif family_typeL[0] == "2-way Category": # Category + Q&A
+                ... #FIXME
 
             else:
                 raise UnknownFamilyType(*family_typeL)
