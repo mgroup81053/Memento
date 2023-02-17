@@ -10,7 +10,8 @@ SECOND_INNER_FAMILY = 0b11
 MANUAL_GENUS_SEPARATOR = 0b100
 MEMORIZING_SEQUENCE = 0b1000
 
-special_family_typeT = ("Selection", "_SELECTION")
+SPECIAL_FAMILY_TYPE = ("Selection", "_SELECTION")
+INDENT = "    "
 
 
 
@@ -185,13 +186,14 @@ def init(text="", flag=0):
 
         _raw_family_types = family.split("\n")[0]
         family_typeL = _raw_family_types[1:-1].split(", ")
-        family_typeL.sort(key=lambda _type: _type not in special_family_typeT)
+        family_typeL.sort(key=lambda _type: _type not in SPECIAL_FAMILY_TYPE)
         family_attributeD = {
             "genus_separator": "\n",
             "first_given": "",
             "start_i": 0,
             "ignorance_of_parentheses": False,
             "suggestion": "",
+            "indented_multiline_genus": False,
         }
 
 
@@ -204,8 +206,8 @@ def init(text="", flag=0):
                 {key:
                     re.compile(r"\\n").sub("\n", value[1:-1])   if re.compile(r""" ".*" | '.*' """, re.VERBOSE).match(value)
                     else int(value) if value.isnumeric()
-                    else True if value == "True"
-                    else False if value == "False"
+                    else True if value in ("True", "true")
+                    else False if value in ("False", "false")
                     else value
                 for key, value in _appending_family_attributeD.items()
                 }
@@ -241,7 +243,29 @@ def init(text="", flag=0):
                     family_attributeD["genus_separator"] = genus_separator
 
 
-        genusL = [line.strip() for line in family_maintext.split(family_attributeD["genus_separator"]) if line.strip()]
+        if family_attributeD["indented_multiline_genus"]:
+            pre_genusL = family_maintext.split(family_attributeD["genus_separator"])
+            genusL = [""]*len(pre_genusL)
+            i = 0
+            for pre_genus in pre_genusL:
+                if pre_genus.strip():
+                    if re.match(rf"^{INDENT*2}", pre_genus): #FIXME: the condition have to be relative to other lines; not absolute `INDENT*2`
+                        i -= 1
+                        genusL[i] += " " + pre_genus.strip()
+                    else:
+                        genusL[i] += pre_genus.strip()
+
+
+                    i += 1
+
+            # remove all `""` in `genusL`
+            try:
+                while True:
+                    genusL.remove("")
+            except:
+                pass
+        else:
+            genusL = [pre_genus.strip() for pre_genus in family_maintext.split(family_attributeD["genus_separator"]) if pre_genus.strip()]
 
         if re.match(r"^genus\[\d+\]$", family_attributeD["first_given"]): # genus[i]
             i = family_attributeD["first_given"][6:-1]
