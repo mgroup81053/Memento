@@ -136,7 +136,7 @@ def get_txt(domain_name="", phylum_name=""):
     if not phylum_name:
         phylum_name = input("Phylum Name: ")
 
-    with open(f"data/{domain_name}/{phylum_name}.txt", "r", encoding="utf-8") as file:
+    with open(f"./data/{domain_name}/{phylum_name}.txt", "r", encoding="utf-8") as file:
         return "".join(file.readlines())
 
 
@@ -198,32 +198,35 @@ def init(text="", flag=0):
 
 
         is_manual_genus_separator: bool = False
-        if _temp := re.compile(r"\[.*\]").match(family.split("\n")[1]):
-            _raw_family_attribute = family.split("\n")[1][1:-1]
-            _key_value_pairL = _raw_family_attribute.split(", ")
-            _appending_family_attributeD = dict(_key_value_pair.split(": ") for _key_value_pair in _key_value_pairL)
-            _appending_family_attributeD = \
-                {key:
-                    re.compile(r"\\n").sub("\n", value[1:-1])   if re.compile(r""" ".*" | '.*' """, re.VERBOSE).match(value)
-                    else int(value) if value.isnumeric()
-                    else True if value in ("True", "true")
-                    else False if value in ("False", "false")
-                    else value
-                for key, value in _appending_family_attributeD.items()
-                }
-
-            family_attributeD.update(_appending_family_attributeD)
+        if re.compile(r"\[.*\]").match(family.split("\n")[1]):
+            _raw_family_attribute = family.split("\n")[1]
 
             family_name = family.split("\n")[2]
             family_maintext = "\n".join(family.split("\n")[3:])
-
-
-            if "genus_separator" in _appending_family_attributeD.keys():
-                is_manual_genus_separator = True
-
         else:
+            _raw_family_attribute = ""
+            
             family_name = family.split("\n")[1]
             family_maintext = "\n".join(family.split("\n")[2:])
+
+        _key_value_pairL = _raw_family_attribute[1:-1].split(", ")
+        _appending_family_attributeD = dict(_key_value_pair.split(": ") for _key_value_pair in _key_value_pairL)
+        _appending_family_attributeD = \
+            {key:
+                re.compile(r"\\n").sub("\n", value[1:-1])   if re.compile(r""" ".*" | '.*' """, re.VERBOSE).match(value)
+                else int(value) if value.isnumeric()
+                else True if value in ("True", "true")
+                else False if value in ("False", "false")
+                else value
+            for key, value in _appending_family_attributeD.items()
+            }
+
+        family_attributeD.update(_appending_family_attributeD)
+        
+        if "genus_separator" in _appending_family_attributeD.keys():
+            is_manual_genus_separator = True
+
+
 
 
         min_genus_separatorD = {
@@ -243,7 +246,7 @@ def init(text="", flag=0):
                     family_attributeD["genus_separator"] = genus_separator
 
 
-        if family_attributeD["indented_multiline_genus"]:
+        if family_attributeD["indented_multiline_genus"] and not flag & MEMORIZING_SEQUENCE:
             pre_genusL = family_maintext.split(family_attributeD["genus_separator"])
             genusL = [""]*len(pre_genusL)
             i = 0
@@ -293,10 +296,10 @@ def init(text="", flag=0):
             if family_typeL[0] == "Sequence":
                 print(family_attributeD["first_given"], end="")
                 start_i = family_attributeD["start_i"]
-                for genus in genusL[start_i:]:
+                for i, genus in enumerate(genusL[start_i:], start=start_i):
                     subgenusL = [subgenus.strip() for subgenus in genus.split("\n") if subgenus.strip()]
                     if flag & MEMORIZING_SEQUENCE:
-                        # First step: memorizing while watching
+                        # First step: Memorizing while watching
                         answer_streak = 0
                         while answer_streak < 3:
                             print(genus)
@@ -304,7 +307,7 @@ def init(text="", flag=0):
 
                             print()
 
-                        # Second step: memorizing without watching
+                        # Second step: Memorizing without watching
                         answer_streak = 0
                         while answer_streak < 3:
                             os.system("cls")
@@ -312,6 +315,11 @@ def init(text="", flag=0):
 
                             input("\nPRESS ANY KEY")
                             os.system("cls")
+
+                        # Third step: Memorizing all at once
+                        init("\n".join([_raw_family_types, _raw_family_attribute, family_name] + genusL[:i+1]))
+
+                        os.system("cls")
                     else:
                         check_answer(get_input(len(subgenusL)), subgenusL)
 
