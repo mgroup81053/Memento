@@ -200,16 +200,17 @@ def init(text="", flag=0):
         is_manual_genus_separator: bool = False
         if re.compile(r"\[.*\]").match(family.split("\n")[1]):
             _raw_family_attribute = family.split("\n")[1]
+            _key_value_pairL = _raw_family_attribute[1:-1].split(", ")
 
             family_name = family.split("\n")[2]
             family_maintext = "\n".join(family.split("\n")[3:])
         else:
-            _raw_family_attribute = ""
+            _raw_family_attribute = ''
+            _key_value_pairL = []
             
             family_name = family.split("\n")[1]
             family_maintext = "\n".join(family.split("\n")[2:])
 
-        _key_value_pairL = _raw_family_attribute[1:-1].split(", ")
         _appending_family_attributeD = dict(_key_value_pair.split(": ") for _key_value_pair in _key_value_pairL)
         _appending_family_attributeD = \
             {key:
