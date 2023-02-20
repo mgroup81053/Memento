@@ -318,7 +318,10 @@ def init(text="", flag=0):
                             os.system("cls")
 
                         # Third step: Memorizing all at once
-                        init("\n".join([_raw_family_types, _raw_family_attribute, family_name] + genusL[:i+1]))
+                        if _raw_family_attribute:
+                            init("\n".join([_raw_family_types, _raw_family_attribute, family_name] + genusL[:i+1]))
+                        else:
+                            init("\n".join([_raw_family_types, family_name] + genusL[:i+1]))
 
                         os.system("cls")
                     else:
