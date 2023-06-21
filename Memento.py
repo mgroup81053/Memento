@@ -9,6 +9,7 @@ INNER_FAMILY = 0b1
 SECOND_INNER_FAMILY = 0b11
 MANUAL_GENUS_SEPARATOR = 0b100
 MEMORIZING_SEQUENCE = 0b1000
+REPEAT_COUNT = 3
 
 SPECIAL_FAMILY_TYPE = ("Selection", "_SELECTION")
 INDENT = "    "
@@ -277,7 +278,11 @@ def init(text="", flag=0):
             family_attributeD["start_i"] = i+1
 
         if family_attributeD["ignorance_of_parentheses"]:
-            genusL = [re.sub(r"\[ [^\[\]]* \] | \( [^()]* \)", "", genus, re.VERBOSE | re.DOTALL) for genus in genusL]
+            pattern = re.compile(r"""
+                  \[ [^\[\]]* \]   #    Packed by square brackets
+                | \( [^()]* \)     # Or Packed by parentheses
+            """, re.VERBOSE)
+            genusL = [pattern.sub("", genus) for genus in genusL]
 
 
 
@@ -302,7 +307,7 @@ def init(text="", flag=0):
                     if flag & MEMORIZING_SEQUENCE:
                         # First step: Memorizing while watching
                         answer_streak = 0
-                        while answer_streak < 3:
+                        while answer_streak < REPEAT_COUNT:
                             print(genus)
                             answer_streak = answer_streak + 1 if check_answer(get_input(len(subgenusL)), subgenusL) else 0
 
@@ -310,7 +315,7 @@ def init(text="", flag=0):
 
                         # Second step: Memorizing without watching
                         answer_streak = 0
-                        while answer_streak < 3:
+                        while answer_streak < REPEAT_COUNT:
                             os.system("cls")
                             answer_streak = answer_streak + 1 if check_answer(get_input(len(subgenusL)), subgenusL) else 0
 
